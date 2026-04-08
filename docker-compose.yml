@@ -1,0 +1,54 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: poppin-postgres
+    environment:
+      POSTGRES_DB: poppin
+      POSTGRES_USER: poppin
+      POSTGRES_PASSWORD: poppin
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U poppin -d poppin" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  neo4j:
+    image: neo4j:5
+    container_name: poppin-neo4j
+    environment:
+      NEO4J_AUTH: neo4j/poppin123
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    volumes:
+      - neo4j_data:/data
+    healthcheck:
+      test: [ "CMD-SHELL", "wget -q --spider http://localhost:7474 || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  firebase:
+    image: andreysenov/firebase-tools
+    container_name: poppin-firebase
+    command: firebase emulators:start --only auth --project poppin-local
+    ports:
+      - "9099:9099"   # Auth emulator
+      - "4000:4000"   # Emulator UI
+    volumes:
+      - ./firebase.json:/home/node/firebase.json
+      - firebase_data:/home/node/.cache/firebase/emulators
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -sf http://localhost:9099 || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+  neo4j_data:
+  firebase_data:

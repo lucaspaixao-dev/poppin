@@ -1,0 +1,28 @@
+spring:
+  application:
+    name: poppin
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/poppin
+    username: poppin
+    password: poppin
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+  neo4j:
+    uri: bolt://localhost:7687
+    authentication:
+      username: neo4j
+      password: neo4j
+
+firebase:
+  project-id: poppin-local
+  emulator-host: localhost:9099
