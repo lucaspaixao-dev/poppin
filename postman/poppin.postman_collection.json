@@ -1,0 +1,436 @@
+{
+  "info": {
+    "_postman_id": "poppin-collection-v1",
+    "name": "Poppin API",
+    "description": "API collection for the Poppin social network backend.\n\nBase URL is controlled by the `base_url` environment variable.\nImport the `poppin.postman_environment.json` file alongside this collection.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [],
+  "item": [
+    {
+      "name": "Users",
+      "description": "User management endpoints — POST /api/v1/users",
+      "item": [
+        {
+          "name": "Create user — minimal",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201 Created', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Response has id', function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.id).to.be.a('string').and.not.empty;",
+                  "    pm.environment.set('created_user_id', body.id);",
+                  "});",
+                  "",
+                  "pm.test('Response has correct email', function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.email).to.eql(JSON.parse(pm.request.body.raw).email);",
+                  "});",
+                  "",
+                  "pm.test('active is true', function () {",
+                  "    pm.expect(pm.response.json().active).to.be.true;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Lucas Paixão\",\n  \"email\": \"lucas@poppin.app\",\n  \"username\": \"lucaspaixao\",\n  \"gender\": \"MALE\",\n  \"birthdate\": \"1995-06-15\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/{{api_version}}/users",
+              "host": ["{{base_url}}"],
+              "path": ["api", "{{api_version}}", "users"]
+            },
+            "description": "Creates a user with only the required fields.\n\nAfter a successful response the `created_user_id` environment variable is set automatically by the test script."
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "originalRequest": {
+                "method": "POST",
+                "header": [{"key": "Content-Type", "value": "application/json"}],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Lucas Paixão\",\n  \"email\": \"lucas@poppin.app\",\n  \"username\": \"lucaspaixao\",\n  \"gender\": \"MALE\",\n  \"birthdate\": \"1995-06-15\"\n}"
+                },
+                "url": {"raw": "{{base_url}}/api/{{api_version}}/users"}
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [{"key": "Content-Type", "value": "application/json"}],
+              "body": "{\n  \"id\": \"550e8400-e29b-41d4-a716-446655440000\",\n  \"name\": \"Lucas Paixão\",\n  \"email\": \"lucas@poppin.app\",\n  \"username\": \"lucaspaixao\",\n  \"gender\": \"MALE\",\n  \"birthdate\": \"1995-06-15\",\n  \"socialName\": null,\n  \"profilePhoto\": null,\n  \"bio\": null,\n  \"location\": null,\n  \"socialMedias\": [],\n  \"active\": true,\n  \"registeredAt\": \"2026-04-09T12:00:00\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Create user — all fields",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201 Created', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Response has id', function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.id).to.be.a('string').and.not.empty;",
+                  "    pm.environment.set('created_user_id', body.id);",
+                  "});",
+                  "",
+                  "pm.test('Location is present', function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.location).to.not.be.null;",
+                  "    pm.expect(body.location.city).to.eql('São Paulo');",
+                  "});",
+                  "",
+                  "pm.test('Social medias are present', function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.socialMedias).to.have.lengthOf(2);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Lucas Paixão\",\n  \"email\": \"lucas.full@poppin.app\",\n  \"username\": \"lucas_full\",\n  \"gender\": \"MALE\",\n  \"birthdate\": \"1995-06-15\",\n  \"bio\": \"Desenvolvedor apaixonado por tecnologia e conexões reais.\",\n  \"socialName\": \"lucasp\",\n  \"profilePhoto\": \"https://cdn.poppin.app/photos/lucas.jpg\",\n  \"location\": {\n    \"city\": \"São Paulo\",\n    \"country\": \"Brazil\"\n  },\n  \"socialMedias\": [\n    {\n      \"platform\": \"INSTAGRAM\",\n      \"url\": \"https://instagram.com/lucaspaixao\"\n    },\n    {\n      \"platform\": \"LINKEDIN\",\n      \"url\": \"https://linkedin.com/in/lucaspaixao\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/{{api_version}}/users",
+              "host": ["{{base_url}}"],
+              "path": ["api", "{{api_version}}", "users"]
+            },
+            "description": "Creates a user with all optional fields: bio, socialName, profilePhoto, location, and two social media links."
+          },
+          "response": []
+        },
+        {
+          "name": "Create user — 400 missing required field",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 400 Bad Request', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"no-name@poppin.app\",\n  \"username\": \"noname\",\n  \"gender\": \"FEMALE\",\n  \"birthdate\": \"1998-03-20\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/{{api_version}}/users",
+              "host": ["{{base_url}}"],
+              "path": ["api", "{{api_version}}", "users"]
+            },
+            "description": "Missing the required `name` field — expects 400 with HttpMessageNotReadableException or MethodArgumentNotValidException."
+          },
+          "response": []
+        },
+        {
+          "name": "Create user — 400 invalid email",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 400 Bad Request', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test User\",\n  \"email\": \"not-an-email\",\n  \"username\": \"testuser\",\n  \"gender\": \"OTHER\",\n  \"birthdate\": \"2000-01-01\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/{{api_version}}/users",
+              "host": ["{{base_url}}"],
+              "path": ["api", "{{api_version}}", "users"]
+            },
+            "description": "Invalid email format — expects 400."
+          },
+          "response": []
+        },
+        {
+          "name": "Create user — 400 invalid username",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 400 Bad Request', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test User\",\n  \"email\": \"test@poppin.app\",\n  \"username\": \"AB\",\n  \"gender\": \"OTHER\",\n  \"birthdate\": \"2000-01-01\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/{{api_version}}/users",
+              "host": ["{{base_url}}"],
+              "path": ["api", "{{api_version}}", "users"]
+            },
+            "description": "Username too short and contains uppercase — expects 400."
+          },
+          "response": []
+        },
+        {
+          "name": "Create user — 400 birthdate in future",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 400 Bad Request', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Future User\",\n  \"email\": \"future@poppin.app\",\n  \"username\": \"futureuser\",\n  \"gender\": \"FEMALE\",\n  \"birthdate\": \"2099-12-31\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/{{api_version}}/users",
+              "host": ["{{base_url}}"],
+              "path": ["api", "{{api_version}}", "users"]
+            },
+            "description": "Birthdate in the future — expects 400."
+          },
+          "response": []
+        },
+        {
+          "name": "Create user — 400 too many social medias",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 400 Bad Request', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Social User\",\n  \"email\": \"social@poppin.app\",\n  \"username\": \"socialuser\",\n  \"gender\": \"OTHER\",\n  \"birthdate\": \"1990-05-10\",\n  \"socialMedias\": [\n    { \"platform\": \"INSTAGRAM\", \"url\": \"https://instagram.com/a\" },\n    { \"platform\": \"TWITTER\",   \"url\": \"https://twitter.com/a\" },\n    { \"platform\": \"FACEBOOK\",  \"url\": \"https://facebook.com/a\" },\n    { \"platform\": \"LINKEDIN\",  \"url\": \"https://linkedin.com/a\" },\n    { \"platform\": \"OTHER\",     \"url\": \"https://example.com/a\" },\n    { \"platform\": \"OTHER\",     \"url\": \"https://example.com/b\" }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/{{api_version}}/users",
+              "host": ["{{base_url}}"],
+              "path": ["api", "{{api_version}}", "users"]
+            },
+            "description": "6 social media links (max is 5) — expects 400."
+          },
+          "response": []
+        },
+        {
+          "name": "Create user — 409 email already exists",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 409 Conflict', function () {",
+                  "    pm.response.to.have.status(409);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Lucas Paixão\",\n  \"email\": \"lucas@poppin.app\",\n  \"username\": \"lucaspaixao2\",\n  \"gender\": \"MALE\",\n  \"birthdate\": \"1995-06-15\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/{{api_version}}/users",
+              "host": ["{{base_url}}"],
+              "path": ["api", "{{api_version}}", "users"]
+            },
+            "description": "Same email as the \"Create user — minimal\" request. Run that one first, then run this to get 409."
+          },
+          "response": []
+        },
+        {
+          "name": "Create user — 409 username already exists",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 409 Conflict', function () {",
+                  "    pm.response.to.have.status(409);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Another User\",\n  \"email\": \"another@poppin.app\",\n  \"username\": \"lucaspaixao\",\n  \"gender\": \"FEMALE\",\n  \"birthdate\": \"1998-03-20\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/{{api_version}}/users",
+              "host": ["{{base_url}}"],
+              "path": ["api", "{{api_version}}", "users"]
+            },
+            "description": "Same username as the \"Create user — minimal\" request. Run that one first, then run this to get 409."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
