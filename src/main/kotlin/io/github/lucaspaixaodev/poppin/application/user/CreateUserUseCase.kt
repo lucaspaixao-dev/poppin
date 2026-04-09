@@ -15,9 +15,7 @@ class CreateUserUseCase(
 ) {
     fun execute(input: CreateUserInput): CreateUserOutput {
         val user = createUserService.execute(input)
-
         createAuthUserService.execute(user)
-
         createUserGraphService.execute(user)
 
         return CreateUserOutput(user)
