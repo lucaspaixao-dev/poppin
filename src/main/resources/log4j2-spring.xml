@@ -30,6 +30,11 @@
             <AppenderRef ref="Console"/>
         </Logger>
 
+        <!-- Flyway migrations -->
+        <Logger name="org.flywaydb" level="DEBUG" additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+
         <!-- Spring & Hibernate — reduce noise -->
         <Logger name="org.springframework" level="INFO" additivity="false">
             <AppenderRef ref="Console"/>

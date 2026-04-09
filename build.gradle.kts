@@ -52,6 +52,7 @@ dependencies {
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.9")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     runtimeOnly("org.postgresql:postgresql")
+    implementation("org.springframework.boot:spring-boot-flyway")
     implementation("org.flywaydb:flyway-core")
     implementation("org.flywaydb:flyway-database-postgresql")
     implementation("com.google.firebase:firebase-admin:9.4.3")
@@ -71,6 +72,14 @@ kotlin {
     compilerOptions {
         freeCompilerArgs.addAll("-Xjsr305=strict", "-Xannotation-default-target=param-property")
     }
+}
+
+springBoot {
+    mainClass.set("io.github.lucaspaixaodev.poppin.PoppinApplicationKt")
+}
+
+tasks.named<org.springframework.boot.gradle.tasks.run.BootRun>("bootRun") {
+    environment("FIREBASE_AUTH_EMULATOR_HOST", "localhost:9099")
 }
 
 tasks.withType<Test> {
