@@ -9,6 +9,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
+import org.springframework.http.MediaType
+import org.springframework.http.ProblemDetail
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -22,11 +24,43 @@ interface CreateUserApi {
         ApiResponse(
             responseCode = "201",
             description = "User created successfully",
-            content = [Content(schema = Schema(implementation = CreateUserResponse::class))],
+            content = [
+                Content(
+                    mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    schema = Schema(implementation = CreateUserResponse::class),
+                ),
+            ],
         ),
-        ApiResponse(responseCode = "400", description = "Validation error", content = [Content()]),
-        ApiResponse(responseCode = "409", description = "Email already registered", content = [Content()]),
-        ApiResponse(responseCode = "409", description = "Username already registered", content = [Content()]),
+        ApiResponse(
+            responseCode = "400",
+            description = "Validation error — invalid or missing fields",
+            content = [
+                Content(
+                    mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    schema = Schema(implementation = ProblemDetail::class),
+                ),
+            ],
+        ),
+        ApiResponse(
+            responseCode = "409",
+            description = "Email or username already registered",
+            content = [
+                Content(
+                    mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    schema = Schema(implementation = ProblemDetail::class),
+                ),
+            ],
+        ),
+        ApiResponse(
+            responseCode = "500",
+            description = "Internal server error — repository or auth gateway failure",
+            content = [
+                Content(
+                    mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    schema = Schema(implementation = ProblemDetail::class),
+                ),
+            ],
+        ),
     )
     @PostMapping
     fun create(
