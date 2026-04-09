@@ -42,7 +42,7 @@ class FirebaseAuthGateway(
             firebaseAuth.getUserByEmail(email)
             true
         } catch (e: FirebaseAuthException) {
-            if (e.authErrorCode.name == USER_NOT_FOUND) {
+            if (e.authErrorCode?.name == USER_NOT_FOUND) {
                 false
             } else {
                 log.error("Failed to check Firebase user existence - email={} error={}", email, e.message)
