@@ -10,7 +10,6 @@ import org.springframework.context.annotation.Configuration
 
 @Configuration
 class FirebaseConfig {
-
     @Value("\${firebase.project-id}")
     private lateinit var projectId: String
 
@@ -23,10 +22,12 @@ class FirebaseConfig {
             System.setProperty(FIREBASE_AUTH_EMULATOR_HOST, it)
         }
 
-        val options = FirebaseOptions.builder()
-            .setCredentials(GoogleCredentials.getApplicationDefault())
-            .setProjectId(projectId)
-            .build()
+        val options =
+            FirebaseOptions
+                .builder()
+                .setCredentials(GoogleCredentials.getApplicationDefault())
+                .setProjectId(projectId)
+                .build()
 
         return if (FirebaseApp.getApps().isEmpty()) {
             FirebaseApp.initializeApp(options)
@@ -36,8 +37,7 @@ class FirebaseConfig {
     }
 
     @Bean
-    fun firebaseAuth(firebaseApp: FirebaseApp): FirebaseAuth =
-        FirebaseAuth.getInstance(firebaseApp)
+    fun firebaseAuth(firebaseApp: FirebaseApp): FirebaseAuth = FirebaseAuth.getInstance(firebaseApp)
 
     companion object {
         const val FIREBASE_AUTH_EMULATOR_HOST = "FIREBASE_AUTH_EMULATOR_HOST"

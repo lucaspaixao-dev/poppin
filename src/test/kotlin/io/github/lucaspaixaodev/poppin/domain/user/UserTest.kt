@@ -4,18 +4,13 @@ import io.github.lucaspaixaodev.poppin.domain.exception.UserException
 import io.github.lucaspaixaodev.poppin.domain.user.input.CreateUserInput
 import io.github.lucaspaixaodev.poppin.domain.user.input.LocationInput
 import io.github.lucaspaixaodev.poppin.domain.user.input.SocialMediaInput
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertNotNull
-import org.junit.jupiter.api.Assertions.assertNull
-import org.junit.jupiter.api.Assertions.assertTrue
+import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatExceptionOfType
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
 import java.time.LocalDate
 
 class UserTest {
-
     private fun validInput(
         name: String = "Lucas Paixão",
         email: String = "lucas@email.com",
@@ -32,109 +27,110 @@ class UserTest {
 
     @Nested
     inner class Create {
-
         @Test
         fun `creates user with valid minimal input`() {
             val result = User.create(validInput())
 
-            assertTrue(result.isSuccess)
+            assertThat(result.isSuccess).isTrue()
             val user = result.getOrThrow()
-            assertNotNull(user.id)
-            assertEquals("Lucas Paixão", user.name)
-            assertEquals("lucas@email.com", user.email)
-            assertEquals("lucaspaixao", user.username)
-            assertTrue(user.active)
-            assertNull(user.socialName)
-            assertNull(user.profilePhoto)
-            assertNull(user.location)
-            assertNull(user.bio)
+            assertThat(user.id).isNotNull()
+            assertThat(user.name).isEqualTo("Lucas Paixão")
+            assertThat(user.email).isEqualTo("lucas@email.com")
+            assertThat(user.username).isEqualTo("lucaspaixao")
+            assertThat(user.active).isTrue()
+            assertThat(user.socialName).isNull()
+            assertThat(user.profilePhoto).isNull()
+            assertThat(user.location).isNull()
+            assertThat(user.bio).isNull()
         }
 
         @Test
         fun `creates user with all optional fields`() {
-            val input = validInput().copy(
-                socialName = "lucaspaixao",
-                profilePhoto = "https://example.com/photo.jpg",
-                location = LocationInput("São Paulo", "Brazil"),
-                bio = "Just a person",
-                socialMedias = listOf(
-                    SocialMediaInput(SocialMedia.Platform.INSTAGRAM, "https://instagram.com/lucas")
+            val input =
+                validInput().copy(
+                    socialName = "lucaspaixao",
+                    profilePhoto = "https://example.com/photo.jpg",
+                    location = LocationInput("São Paulo", "Brazil"),
+                    bio = "Just a person",
+                    socialMedias =
+                        listOf(
+                            SocialMediaInput(SocialMedia.Platform.INSTAGRAM, "https://instagram.com/lucas"),
+                        ),
                 )
-            )
 
             val result = User.create(input)
 
-            assertTrue(result.isSuccess)
+            assertThat(result.isSuccess).isTrue()
             val user = result.getOrThrow()
-            assertEquals("lucaspaixao", user.socialName)
-            assertEquals("https://example.com/photo.jpg", user.profilePhoto)
-            assertEquals("São Paulo", user.location!!.city)
-            assertEquals("Just a person", user.bio)
-            assertEquals(1, user.socialMedias.size)
+            assertThat(user.socialName).isEqualTo("lucaspaixao")
+            assertThat(user.profilePhoto).isEqualTo("https://example.com/photo.jpg")
+            assertThat(user.location!!.city).isEqualTo("São Paulo")
+            assertThat(user.bio).isEqualTo("Just a person")
+            assertThat(user.socialMedias).hasSize(1)
         }
 
         @Test
         fun `fails when name is blank`() {
             val result = User.create(validInput(name = "  "))
 
-            assertTrue(result.isFailure)
-            assertThrows<UserException.InvalidName> { result.getOrThrow() }
+            assertThat(result.isFailure).isTrue()
+            assertThatExceptionOfType(UserException.InvalidName::class.java).isThrownBy { result.getOrThrow() }
         }
 
         @Test
         fun `fails when name is shorter than 2 characters`() {
             val result = User.create(validInput(name = "A"))
 
-            assertTrue(result.isFailure)
-            assertThrows<UserException.InvalidName> { result.getOrThrow() }
+            assertThat(result.isFailure).isTrue()
+            assertThatExceptionOfType(UserException.InvalidName::class.java).isThrownBy { result.getOrThrow() }
         }
 
         @Test
         fun `fails when name exceeds 100 characters`() {
             val result = User.create(validInput(name = "A".repeat(101)))
 
-            assertTrue(result.isFailure)
-            assertThrows<UserException.InvalidName> { result.getOrThrow() }
+            assertThat(result.isFailure).isTrue()
+            assertThatExceptionOfType(UserException.InvalidName::class.java).isThrownBy { result.getOrThrow() }
         }
 
         @Test
         fun `fails when email format is invalid`() {
             val result = User.create(validInput(email = "not-an-email"))
 
-            assertTrue(result.isFailure)
-            assertThrows<UserException.InvalidEmail> { result.getOrThrow() }
+            assertThat(result.isFailure).isTrue()
+            assertThatExceptionOfType(UserException.InvalidEmail::class.java).isThrownBy { result.getOrThrow() }
         }
 
         @Test
         fun `fails when username does not match pattern`() {
             val result = User.create(validInput(username = "Lu"))
 
-            assertTrue(result.isFailure)
-            assertThrows<UserException.InvalidUsername> { result.getOrThrow() }
+            assertThat(result.isFailure).isTrue()
+            assertThatExceptionOfType(UserException.InvalidUsername::class.java).isThrownBy { result.getOrThrow() }
         }
 
         @Test
         fun `fails when username contains uppercase letters`() {
             val result = User.create(validInput(username = "LucasPaixao"))
 
-            assertTrue(result.isFailure)
-            assertThrows<UserException.InvalidUsername> { result.getOrThrow() }
+            assertThat(result.isFailure).isTrue()
+            assertThatExceptionOfType(UserException.InvalidUsername::class.java).isThrownBy { result.getOrThrow() }
         }
 
         @Test
         fun `fails when birthdate is today`() {
             val result = User.create(validInput(birthdate = LocalDate.now()))
 
-            assertTrue(result.isFailure)
-            assertThrows<UserException.InvalidBirthdate> { result.getOrThrow() }
+            assertThat(result.isFailure).isTrue()
+            assertThatExceptionOfType(UserException.InvalidBirthdate::class.java).isThrownBy { result.getOrThrow() }
         }
 
         @Test
         fun `fails when birthdate is in the future`() {
             val result = User.create(validInput(birthdate = LocalDate.now().plusDays(1)))
 
-            assertTrue(result.isFailure)
-            assertThrows<UserException.InvalidBirthdate> { result.getOrThrow() }
+            assertThat(result.isFailure).isTrue()
+            assertThatExceptionOfType(UserException.InvalidBirthdate::class.java).isThrownBy { result.getOrThrow() }
         }
 
         @Test
@@ -143,8 +139,8 @@ class UserTest {
 
             val result = User.create(input)
 
-            assertTrue(result.isFailure)
-            assertThrows<UserException.InvalidSocialName> { result.getOrThrow() }
+            assertThat(result.isFailure).isTrue()
+            assertThatExceptionOfType(UserException.InvalidSocialName::class.java).isThrownBy { result.getOrThrow() }
         }
 
         @Test
@@ -153,8 +149,8 @@ class UserTest {
 
             val result = User.create(input)
 
-            assertTrue(result.isFailure)
-            assertThrows<UserException.InvalidLocation> { result.getOrThrow() }
+            assertThat(result.isFailure).isTrue()
+            assertThatExceptionOfType(UserException.InvalidLocation::class.java).isThrownBy { result.getOrThrow() }
         }
 
         @Test
@@ -163,21 +159,22 @@ class UserTest {
 
             val result = User.create(input)
 
-            assertTrue(result.isFailure)
-            assertThrows<UserException.InvalidLocation> { result.getOrThrow() }
+            assertThat(result.isFailure).isTrue()
+            assertThatExceptionOfType(UserException.InvalidLocation::class.java).isThrownBy { result.getOrThrow() }
         }
 
         @Test
         fun `fails when social medias exceed 5`() {
-            val medias = (1..6).map {
-                SocialMediaInput(SocialMedia.Platform.OTHER, "https://example.com/$it")
-            }
+            val medias =
+                (1..6).map {
+                    SocialMediaInput(SocialMedia.Platform.OTHER, "https://example.com/$it")
+                }
             val input = validInput().copy(socialMedias = medias)
 
             val result = User.create(input)
 
-            assertTrue(result.isFailure)
-            assertThrows<UserException.InvalidSocialMedia> { result.getOrThrow() }
+            assertThat(result.isFailure).isTrue()
+            assertThatExceptionOfType(UserException.InvalidSocialMedia::class.java).isThrownBy { result.getOrThrow() }
         }
 
         @Test
@@ -186,13 +183,12 @@ class UserTest {
 
             val result = User.create(input)
 
-            assertTrue(result.isFailure)
+            assertThat(result.isFailure).isTrue()
         }
     }
 
     @Nested
     inner class Mutations {
-
         private fun buildUser() = User.create(validInput()).getOrThrow()
 
         @Test
@@ -201,7 +197,7 @@ class UserTest {
 
             user.deactivate()
 
-            assertFalse(user.active)
+            assertThat(user.active).isFalse()
         }
 
         @Test
@@ -211,7 +207,7 @@ class UserTest {
 
             user.activate()
 
-            assertTrue(user.active)
+            assertThat(user.active).isTrue()
         }
 
         @Test
@@ -220,8 +216,8 @@ class UserTest {
 
             val result = user.updateSocialName("new_name_01")
 
-            assertTrue(result.isSuccess)
-            assertEquals("new_name_01", user.socialName)
+            assertThat(result.isSuccess).isTrue()
+            assertThat(user.socialName).isEqualTo("new_name_01")
         }
 
         @Test
@@ -230,8 +226,8 @@ class UserTest {
 
             val result = user.updateSocialName("Invalid Name!")
 
-            assertTrue(result.isFailure)
-            assertNull(user.socialName)
+            assertThat(result.isFailure).isTrue()
+            assertThat(user.socialName).isNull()
         }
 
         @Test
@@ -240,8 +236,8 @@ class UserTest {
 
             val result = user.updateProfilePhoto("https://cdn.example.com/photo.png")
 
-            assertTrue(result.isSuccess)
-            assertEquals("https://cdn.example.com/photo.png", user.profilePhoto)
+            assertThat(result.isSuccess).isTrue()
+            assertThat(user.profilePhoto).isEqualTo("https://cdn.example.com/photo.png")
         }
 
         @Test
@@ -251,38 +247,37 @@ class UserTest {
 
             val result = user.updateLocation(location)
 
-            assertTrue(result.isSuccess)
-            assertEquals("Rio de Janeiro", user.location!!.city)
+            assertThat(result.isSuccess).isTrue()
+            assertThat(user.location!!.city).isEqualTo("Rio de Janeiro")
         }
     }
 
     @Nested
     inner class LocationValueObject {
-
         @Test
         fun `throws when city is blank`() {
-            assertThrows<UserException.InvalidLocation> {
+            assertThatExceptionOfType(UserException.InvalidLocation::class.java).isThrownBy {
                 Location("", "Brazil")
             }
         }
 
         @Test
         fun `throws when country is blank`() {
-            assertThrows<UserException.InvalidLocation> {
+            assertThatExceptionOfType(UserException.InvalidLocation::class.java).isThrownBy {
                 Location("São Paulo", "")
             }
         }
 
         @Test
         fun `throws when city exceeds 100 characters`() {
-            assertThrows<UserException.InvalidLocation> {
+            assertThatExceptionOfType(UserException.InvalidLocation::class.java).isThrownBy {
                 Location("A".repeat(101), "Brazil")
             }
         }
 
         @Test
         fun `throws when country exceeds 100 characters`() {
-            assertThrows<UserException.InvalidLocation> {
+            assertThatExceptionOfType(UserException.InvalidLocation::class.java).isThrownBy {
                 Location("São Paulo", "B".repeat(101))
             }
         }
@@ -291,17 +286,16 @@ class UserTest {
         fun `creates valid location`() {
             val location = Location("São Paulo", "Brazil")
 
-            assertEquals("São Paulo", location.city)
-            assertEquals("Brazil", location.country)
+            assertThat(location.city).isEqualTo("São Paulo")
+            assertThat(location.country).isEqualTo("Brazil")
         }
     }
 
     @Nested
     inner class SocialMediaValueObject {
-
         @Test
         fun `throws when url is blank`() {
-            assertThrows<UserException.InvalidSocialMedia> {
+            assertThatExceptionOfType(UserException.InvalidSocialMedia::class.java).isThrownBy {
                 SocialMedia(SocialMedia.Platform.INSTAGRAM, "")
             }
         }
@@ -310,8 +304,8 @@ class UserTest {
         fun `creates valid social media`() {
             val sm = SocialMedia(SocialMedia.Platform.INSTAGRAM, "https://instagram.com/lucas")
 
-            assertEquals(SocialMedia.Platform.INSTAGRAM, sm.platform)
-            assertEquals("https://instagram.com/lucas", sm.url)
+            assertThat(sm.platform).isEqualTo(SocialMedia.Platform.INSTAGRAM)
+            assertThat(sm.url).isEqualTo("https://instagram.com/lucas")
         }
     }
 }

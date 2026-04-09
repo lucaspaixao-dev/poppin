@@ -5,5 +5,5 @@ import org.springframework.data.neo4j.core.schema.Node
 
 @Node("User")
 class UserNode(
-    @Id val id: String
+    @Id val id: String,
 )

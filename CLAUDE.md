@@ -6,19 +6,19 @@ Rede social descontraída com foco em conexões reais entre pessoas.
 
 ## Stack
 
-| Camada          | Tecnologia          | Responsabilidade                                                |
-|-----------------|---------------------|-----------------------------------------------------------------|
-| Backend         | Kotlin + Spring Boot | API REST                                                       |
-| Auth            | Firebase Auth        | Autenticação de usuários                                       |
-| Banco principal | PostgreSQL           | Source of truth — users, posts, comments, likes, notifications |
-| Migrations      | Flyway               | Versionamento de schema                                        |
-| Grafo           | Neo4j                | Friendships e sugestões de amizade                             |
+| Camada          | Tecnologia                   | Responsabilidade                                                |
+|-----------------|------------------------------|-----------------------------------------------------------------|
+| Backend         | Kotlin 2.2.0 + Spring Boot 4 | API REST                                                        |
+| Auth            | Firebase Auth        | Autenticação de usuários                                        |
+| Banco principal | PostgreSQL           | Source of truth — users, posts, comments, likes, notifications  |
+| Migrations      | Flyway               | Versionamento de schema                                         |
+| Grafo           | Neo4j                | Friendships e sugestões de amizade                              |
 
 ---
 
 ## Arquitetura
 
-Clean Architecture com DDD.
+Clean Architecture com DDD. Fluxo de dependência: `infrastructure.input → application → domain`. A camada de domínio não conhece nenhuma outra.
 
 ```
 src/
@@ -46,22 +46,28 @@ src/
     output/
       database/                   → entidades JPA, repositórios Spring Data
       authentication/             → cliente Firebase
+      graph/                      → nodes e repositórios Neo4j
 ```
 
-Fluxo de dependência: `infrastructure.input → application → domain`. A camada de domínio não conhece nenhuma outra.
+### Fluxo de dados por camada
+
+```
+Request (infrastructure) → Input (domain) → UseCase → Output (domain) → Response (infrastructure)
+```
+
+- **Inputs** (`domain/{entidade}/input/`) — DTOs de transporte para factories e use cases. `data class` sem lógica. Tipos próprios (`LocationInput`, `SocialMediaInput`) — nunca usar value objects de domínio diretamente.
+- **Outputs** (`domain/{entidade}/output/`) — DTOs de saída dos use cases. `data class` sem lógica. Tipos próprios (`LocationOutput`, `SocialMediaOutput`) — nunca expor value objects ou entidades de domínio para fora.
 
 ### Injeção de dependência de serviços de domínio
 
 Serviços de domínio não têm anotações Spring (`@Service`, `@Component`, etc.). São registrados como `@Bean` em classes `@Configuration` em `infrastructure/config/`.
 
 ```kotlin
-// ✅ correto
 @Configuration
 class UserDomainConfig {
     @Bean
-    fun createUserUseCase(userRepository: UserRepository): CreateUserUseCase {
-        return CreateUserUseCase(userRepository)
-    }
+    fun createUserUseCase(userRepository: UserRepository): CreateUserUseCase =
+        CreateUserUseCase(userRepository)
 }
 ```
 
@@ -116,58 +122,48 @@ data class Location(val city: String, val country: String) {
 }
 ```
 
-### Inputs e Outputs do domínio
-
-- **Inputs** (`domain/{entidade}/input/`) — DTOs de transporte para as factories e use cases
-  - `data class` sem lógica e sem validação
-  - Tipos próprios (`LocationInput`, `SocialMediaInput`) — nunca usar value objects de domínio diretamente
-- **Outputs** (`domain/{entidade}/output/`) — DTOs de saída dos use cases para a camada de apresentação
-  - `data class` sem lógica
-  - Tipos próprios (`LocationOutput`, `SocialMediaOutput`) — nunca expor value objects ou entidades de domínio para fora
-
-```
-Request (infrastructure) → Input (domain) → UseCase → Output (domain) → Response (infrastructure)
-```
-
 ---
 
 ## Exceptions
 
-Hierarquia com `sealed class`. Toda exception de domínio herda de `DomainException`.
+Hierarquia com `sealed class`. A raiz é `BaseException : RuntimeException` — **não** `Exception` (Mockito rejeita `thenThrow` em checked exceptions).
 
 ```
-DomainException (sealed) : Exception
+BaseException (sealed) : RuntimeException
+  ├── RepositoryException (sealed)          → falhas de persistência — mapeado para 500
+  │     └── CreationFailed(message, cause)
+  ├── AuthGatewayException (sealed)         → falhas de comunicação com Firebase — mapeado para 500
+  │     ├── UserCreationFailed(email, cause)
+  │     └── UserUpdateFailed(uid, cause)
   └── UserException (sealed)
-        ├── InvalidEmail(email)
-        ├── InvalidName(message)
-        ├── InvalidSocialName(socialName)
-        ├── InvalidProfilePhoto(url)
-        ├── InvalidLocation(message)
-        ├── InvalidSocialMedia(message)
-        ├── NotFound(id)
-        └── AlreadyExists(email)
-  └── PostException (sealed)
-        ├── NotFound(id)
-        ├── InvalidContent(message)
-        └── Unauthorized(userId)
-  └── FriendshipException (sealed)
-        ├── AlreadyExists(message)
-        ├── NotFound(message)
-        └── CannotAddYourself
-  └── CommentException (sealed)
-        ├── NotFound(id)
-        └── InvalidContent(message)
+        ├── InvalidEmail(email)             → 400
+        ├── InvalidName(message)            → 400
+        ├── InvalidSocialName(socialName)   → 400
+        ├── InvalidProfilePhoto(url)        → 400
+        ├── InvalidLocation(message)        → 400
+        ├── InvalidSocialMedia(message)     → 400
+        ├── InvalidUsername(username)       → 400
+        ├── InvalidBirthdate(message)       → 400
+        ├── NotFound(id)                    → 404
+        ├── AlreadyExists(email)            → 409
+        └── UsernameAlreadyExists(username) → 409
 ```
 
-Mapeamento para HTTP em um `@ControllerAdvice` global:
+Mapeamento para HTTP em `GlobalExceptionHandler` (`@RestControllerAdvice`):
 
-| Exception       | Status HTTP |
-|-----------------|-------------|
-| `NotFound`      | 404         |
-| `Invalid*`      | 400         |
-| `AlreadyExists` | 409         |
-| `Unauthorized`  | 403         |
-| Qualquer outra  | 500         |
+| Exception                          | Status HTTP |
+|------------------------------------|-------------|
+| `NotFound`                         | 404         |
+| `Invalid*`                         | 400         |
+| `AlreadyExists` / `*AlreadyExists` | 409         |
+| `Unauthorized`                     | 403         |
+| `RepositoryException`              | 500         |
+| `AuthGatewayException`             | 500         |
+| `MethodArgumentNotValidException`  | 400         |
+| `HttpMessageNotReadableException`  | 400         |
+| Qualquer outra                     | 500         |
+
+`MethodArgumentNotValidException` (Bean Validation em `@RequestBody`) e `HttpMessageNotReadableException` (corpo JSON inválido ou campo obrigatório ausente) **devem sempre ter handler explícito** — caso contrário caem no fallback 500.
 
 ---
 
@@ -229,13 +225,60 @@ class LocationEmbeddable(
 ### Neo4j
 
 - Apenas nodes de `User` e edges de `Friendship` vivem no Neo4j
+- Node de `User` armazena **somente o `id`** — nunca desnormalizar nome, foto ou outros dados do PostgreSQL
 - Nenhuma outra entidade do domínio é persistida aqui
+- Node: `@Node("Label") class XNode(@Id val id: String)` — sem campos extras além do id de referência
+- Repositório Spring Data: `interface XNeo4jRepository : Neo4jRepository<XNode, String>`
+- Implementação de domínio: classe `@Repository` que injeta o repositório Spring Data e implementa a interface de domínio (`UserGraphRepository`)
+
+#### Configuração de Transaction Manager (JPA + Neo4j)
+
+Quando JPA e Neo4j coexistem, o auto-configure do Spring Boot **não** cria `Neo4jTransactionManager` porque `JpaTransactionManager` já satisfaz `@ConditionalOnMissingBean(PlatformTransactionManager)`. Sem o `Neo4jTransactionManager`, qualquer escrita pelo `Neo4jTemplate` lança `NullPointerException`.
+
+**Solução obrigatória**: declarar ambos explicitamente em `Neo4jConfig`:
+
+```kotlin
+@Configuration
+@EnableNeo4jRepositories(
+    basePackages = ["io.github.lucaspaixaodev.poppin.infrastructure.output.graph"],
+    transactionManagerRef = "neo4jTransactionManager"
+)
+class Neo4jConfig {
+
+    @Bean
+    @Primary
+    fun transactionManager(entityManagerFactory: EntityManagerFactory): JpaTransactionManager =
+        JpaTransactionManager(entityManagerFactory)
+
+    @Bean
+    fun neo4jTransactionManager(driver: Driver): Neo4jTransactionManager =
+        Neo4jTransactionManager(driver)
+}
+```
+
+`@Primary` no `JpaTransactionManager` garante que JPA repositories continuam usando o manager correto por padrão. `@EnableNeo4jRepositories(transactionManagerRef = "neo4jTransactionManager")` direciona os repositórios Neo4j para o manager específico.
 
 ### Firebase Auth
 
 - Responsável apenas por autenticação — nunca por autorização de negócio
 - O `uid` do Firebase é usado como `id` do `User` no domínio
 - Gateway em `infrastructure/output/authentication/` — nunca chamar o SDK do Firebase fora dessa camada
+
+### Jackson + Kotlin (Spring Boot 4)
+
+Spring Boot 4 usa Jackson 3 (`tools.jackson`). O módulo Kotlin **não** é incluído automaticamente:
+
+```kotlin
+implementation("tools.jackson.module:jackson-module-kotlin")
+```
+
+Sem esse módulo, Jackson 3 passa `null` para parâmetros Kotlin não-nulos ausentes no JSON, causando `NullPointerException` no construtor mesmo que o campo tenha valor default — toda request sem campo obrigatório retorna 500 ao invés de 400.
+
+### Request DTOs (infrastructure/input/rest)
+
+- Campos opcionais com valor default (`= emptyList()`, `= null`) funcionam corretamente com o módulo Kotlin registrado
+- Campos obrigatórios não-nulos sem default (`val name: String`) resultam em `HttpMessageNotReadableException` quando ausentes — tratado como 400 pelo `GlobalExceptionHandler`
+- Validações Jakarta ficam nas anotações do DTO (`@NotBlank`, `@Email`, `@Size`, `@Past`) — gera `MethodArgumentNotValidException` → 400
 
 ---
 
@@ -246,27 +289,141 @@ class LocationEmbeddable(
 - **Nunca logar no domínio** (`domain/`) nem na aplicação (`application/`)
 - Configuração em `src/main/resources/log4j2-spring.xml`
 
-| Nível   | Quando usar                                                        |
-|---------|--------------------------------------------------------------------|
-| `TRACE` | Rastreamento linha a linha — apenas desenvolvimento local          |
-| `DEBUG` | Valores e fluxo interno — desenvolvimento e staging                |
-| `INFO`  | Eventos normais de negócio — usuário criado, post publicado        |
-| `WARN`  | Retry, fallback, lentidão — sistema se recuperou               |
-| `ERROR` | Operação falhou, usuário impactado — requer investigação           |
-| `FATAL` | Sistema comprometido — requer ação imediata                        |
+| Nível   | Quando usar                                                             |
+|---------|-------------------------------------------------------------------------|
+| `TRACE` | Rastreamento linha a linha — apenas desenvolvimento local               |
+| `DEBUG` | Valores e fluxo interno — desenvolvimento e staging                     |
+| `INFO`  | Eventos normais de negócio — usuário criado, post publicado             |
+| `WARN`  | Retry, fallback, lentidão — sistema se recuperou                        |
+| `ERROR` | Operação falhou, usuário impactado — requer investigação                |
+| `FATAL` | Sistema comprometido — requer ação imediata                             |
 
 ```kotlin
-// ✅ correto — INFO para operação normal
+// ✅ INFO para operação normal
 log.info("User created: userId=$userId")
 
-// ✅ correto — WARN para situação inesperada recuperável
+// ✅ WARN para situação inesperada recuperável
 log.warn("Retry attempt $attempt for postId=$postId")
 
-// ✅ correto — ERROR para falha com exception
+// ✅ ERROR para falha com exception
 log.error("Failed to save user: userId=$userId", exception)
 
-// ❌ errado — erro de validação não é ERROR do sistema
+// ❌ erro de validação não é ERROR do sistema
 log.error("Invalid email: $email")
+```
+
+---
+
+## Qualidade de código
+
+### Ferramentas
+
+| Ferramenta | Versão   | Propósito                              | Executar com                      |
+|------------|----------|----------------------------------------|-----------------------------------|
+| detekt     | 1.23.8   | Análise estática — bugs e code smells  | `./gradlew detekt`                |
+| ktlint     | 14.2.0   | Formatação e estilo Kotlin             | `./gradlew ktlintCheck`           |
+| Kover      | 0.9.1    | Cobertura de testes (mín. 90%)         | `./gradlew koverVerify`           |
+
+Para gerar relatório HTML de cobertura: `./gradlew koverHtmlReport` → `build/reports/kover/html/`.
+
+### detekt
+
+Configuração em `config/detekt.yml`. Ajustes relevantes feitos para o projeto:
+
+### ktlint
+
+Integrado via plugin `org.jlleitschuh.gradle.ktlint`. Sem arquivo de configuração customizado — usa os defaults do ktlint (estilo Kotlin oficial). Comandos:
+
+```
+./gradlew ktlintCheck   # verifica
+./gradlew ktlintFormat  # corrige automaticamente
+```
+
+O hook de formatação pode ser instalado via `./gradlew addKtlintFormatGitPreCommitHook`.
+
+### Cobertura (Kover)
+
+Threshold mínimo: **90% de linhas** — verificado por `./gradlew koverVerify`.
+
+**Excluídos da cobertura** (infraestrutura sem lógica testável isoladamente):
+- `PoppinApplicationKt` — entry point, sem lógica
+- `*.infrastructure.config.*` — beans de configuração Spring
+- `*.infrastructure.input.rest.*.request.*` e `*.response.*` — DTOs puros
+- `*Entity`, `*Embeddable` — mapeamento JPA
+- `*.infrastructure.output.graph.*`, `*.infrastructure.output.database.neo4j.*` — Neo4j (auto-implementado pelo Spring Data)
+- `*.infrastructure.output.authentication.*` — gateway Firebase (requer credenciais reais; sempre mockado em testes)
+
+**O que deve ser coberto**:
+- Todo o `domain/` — entidades, value objects, serviços, factories
+- Todo o `application/` — use cases
+- Controllers e repositórios de banco (PostgreSQL) — cobertos pelos testes de integração
+
+---
+
+## Testes
+
+### Testes de Integração
+
+Localizados em `src/test/kotlin/.../integration/`. Herdam de `AbstractIntegrationTest`.
+
+**Configuração base** (`AbstractIntegrationTest`):
+
+```kotlin
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
+@TestPropertySource(properties = [
+    "spring.flyway.enabled=false",
+    "spring.jpa.hibernate.ddl-auto=create-drop"
+])
+@Testcontainers
+abstract class AbstractIntegrationTest {
+
+    @MockitoBean protected lateinit var firebaseApp: FirebaseApp
+    @MockitoBean protected lateinit var firebaseAuth: FirebaseAuth
+    @MockitoBean protected lateinit var authGateway: AuthGateway
+
+    @Autowired private lateinit var webApplicationContext: WebApplicationContext
+
+    protected val mockMvc: MockMvc by lazy {
+        MockMvcBuilders.webAppContextSetup(webApplicationContext).build()
+    }
+
+    companion object {
+        @Container @ServiceConnection @JvmStatic
+        val postgres: PostgreSQLContainer<*> = PostgreSQLContainer("postgres:16-alpine")
+
+        @Container @JvmStatic
+        val neo4j: Neo4jContainer<*> = Neo4jContainer("neo4j:5")
+
+        @DynamicPropertySource @JvmStatic
+        fun neo4jProperties(registry: DynamicPropertyRegistry) {
+            registry.add("spring.neo4j.uri") { neo4j.boltUrl }
+            registry.add("spring.neo4j.authentication.username") { "neo4j" }
+            registry.add("spring.neo4j.authentication.password") { neo4j.adminPassword }
+        }
+    }
+}
+```
+
+**Regras**:
+
+- Flyway desabilitado em testes — Hibernate cria/destrói o schema com `create-drop`
+- `@ServiceConnection` funciona para PostgreSQL; Neo4j requer `@DynamicPropertySource` manual
+- Firebase mockado com `@MockitoBean` — evita chamada ao `GoogleCredentials.getApplicationDefault()`
+- `ObjectMapper` instanciado diretamente (`ObjectMapper().findAndRegisterModules()`) — não disponível como bean no contexto `MOCK`
+- `@MockitoBean` é o substituto do Spring Framework 6.2+ para o `@MockBean` removido
+
+**Lazy loading em testes**:
+
+Coleções `@ElementCollection(FetchType.LAZY)` lançam `LazyInitializationException` quando acessadas fora de sessão JPA. Solução: anotar o método de teste com `@Transactional`:
+
+```kotlin
+@Test
+@Transactional
+fun `creates user with all optional fields`() {
+    val result = post("/api/v1/users", body).andExpect(status().isCreated()).andReturn()
+    val entity = userJpaRepository.findById(id).get()
+    assertThat(entity.socialMedias).hasSize(2) // sem LazyInitializationException
+}
 ```
 
 ---
@@ -280,8 +437,9 @@ log.error("Invalid email: $email")
 - Nunca carregar coleções com eager loading
 - Nunca adicionar anotações JPA ou Spring em classes do domínio
 - Nunca acessar o domínio direto da camada de apresentação — sempre via use case
-- Nunca lançar exceptions genéricas — sempre usar a hierarquia de `DomainException`
+- Nunca lançar exceptions genéricas — sempre usar a hierarquia de `BaseException`
 - Nunca chamar o SDK do Firebase fora de `infrastructure/output/authentication/`
+- Nunca salvar dados além do `id` no node Neo4j
 - Nunca editar uma migration já aplicada
 
 ---

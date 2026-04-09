@@ -8,7 +8,6 @@ import io.github.lucaspaixaodev.poppin.domain.user.repository.UserRepository
 class CreateUserService(
     private val userRepository: UserRepository,
 ) {
-
     fun execute(input: CreateUserInput): User {
         if (userRepository.existsByEmail(input.email)) {
             throw UserException.AlreadyExists(input.email)

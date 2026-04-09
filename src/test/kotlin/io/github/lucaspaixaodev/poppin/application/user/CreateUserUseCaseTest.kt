@@ -7,9 +7,9 @@ import io.github.lucaspaixaodev.poppin.domain.user.input.CreateUserInput
 import io.github.lucaspaixaodev.poppin.domain.user.service.CreateAuthUserService
 import io.github.lucaspaixaodev.poppin.domain.user.service.CreateUserGraphService
 import io.github.lucaspaixaodev.poppin.domain.user.service.CreateUserService
-import org.junit.jupiter.api.Assertions.assertEquals
+import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatExceptionOfType
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.Mock
 import org.mockito.Mockito.doThrow
@@ -23,7 +23,6 @@ import java.time.LocalDateTime
 
 @ExtendWith(MockitoExtension::class)
 class CreateUserUseCaseTest {
-
     @Mock
     private lateinit var createUserService: CreateUserService
 
@@ -37,28 +36,30 @@ class CreateUserUseCaseTest {
         CreateUserUseCase(createUserService, createAuthUserService, createUserGraphService)
     }
 
-    private fun validInput() = CreateUserInput(
-        name = "Lucas Paixão",
-        email = "lucas@email.com",
-        username = "lucaspaixao",
-        gender = Gender.MALE,
-        birthdate = LocalDate.of(1995, 1, 1),
-    )
+    private fun validInput() =
+        CreateUserInput(
+            name = "Lucas Paixão",
+            email = "lucas@email.com",
+            username = "lucaspaixao",
+            gender = Gender.MALE,
+            birthdate = LocalDate.of(1995, 1, 1),
+        )
 
-    private fun buildUser() = User.reconstitute(
-        id = "user-id-123",
-        name = "Lucas Paixão",
-        email = "lucas@email.com",
-        username = "lucaspaixao",
-        gender = Gender.MALE,
-        birthdate = LocalDate.of(1995, 1, 1),
-        socialName = null,
-        profilePhoto = null,
-        bio = null,
-        active = true,
-        location = null,
-        registeredAt = LocalDateTime.now(),
-    )
+    private fun buildUser() =
+        User.reconstitute(
+            id = "user-id-123",
+            name = "Lucas Paixão",
+            email = "lucas@email.com",
+            username = "lucaspaixao",
+            gender = Gender.MALE,
+            birthdate = LocalDate.of(1995, 1, 1),
+            socialName = null,
+            profilePhoto = null,
+            bio = null,
+            active = true,
+            location = null,
+            registeredAt = LocalDateTime.now(),
+        )
 
     @Test
     fun `executes all services and returns output`() {
@@ -68,8 +69,8 @@ class CreateUserUseCaseTest {
 
         val output = useCase.execute(input)
 
-        assertEquals("user-id-123", output.id)
-        assertEquals("lucas@email.com", output.email)
+        assertThat(output.id).isEqualTo("user-id-123")
+        assertThat(output.email).isEqualTo("lucas@email.com")
         verify(createUserService).execute(input)
         verify(createAuthUserService).execute(user)
         verify(createUserGraphService).execute(user)
@@ -81,7 +82,7 @@ class CreateUserUseCaseTest {
         `when`(createUserService.execute(input))
             .thenThrow(UserException.AlreadyExists("lucas@email.com"))
 
-        assertThrows<UserException.AlreadyExists> {
+        assertThatExceptionOfType(UserException.AlreadyExists::class.java).isThrownBy {
             useCase.execute(input)
         }
 
@@ -95,9 +96,10 @@ class CreateUserUseCaseTest {
         val user = buildUser()
         `when`(createUserService.execute(input)).thenReturn(user)
         doThrow(UserException.AlreadyExists("lucas@email.com"))
-            .`when`(createAuthUserService).execute(user)
+            .`when`(createAuthUserService)
+            .execute(user)
 
-        assertThrows<UserException.AlreadyExists> {
+        assertThatExceptionOfType(UserException.AlreadyExists::class.java).isThrownBy {
             useCase.execute(input)
         }
 

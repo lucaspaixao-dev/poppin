@@ -15,26 +15,26 @@ import java.time.LocalDateTime
 
 @ExtendWith(MockitoExtension::class)
 class CreateUserGraphServiceTest {
-
     @Mock
     private lateinit var userGraphRepository: UserGraphRepository
 
     private val service by lazy { CreateUserGraphService(userGraphRepository) }
 
-    private fun buildUser(id: String = "user-id-123") = User.reconstitute(
-        id = id,
-        name = "Lucas Paixão",
-        email = "lucas@email.com",
-        username = "lucaspaixao",
-        gender = Gender.MALE,
-        birthdate = LocalDate.of(1995, 1, 1),
-        socialName = null,
-        profilePhoto = null,
-        bio = null,
-        active = true,
-        location = null,
-        registeredAt = LocalDateTime.now(),
-    )
+    private fun buildUser(id: String = "user-id-123") =
+        User.reconstitute(
+            id = id,
+            name = "Lucas Paixão",
+            email = "lucas@email.com",
+            username = "lucaspaixao",
+            gender = Gender.MALE,
+            birthdate = LocalDate.of(1995, 1, 1),
+            socialName = null,
+            profilePhoto = null,
+            bio = null,
+            active = true,
+            location = null,
+            registeredAt = LocalDateTime.now(),
+        )
 
     @Test
     fun `creates node when user does not exist in graph`() {

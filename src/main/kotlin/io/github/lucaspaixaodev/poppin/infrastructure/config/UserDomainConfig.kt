@@ -11,14 +11,11 @@ import org.springframework.context.annotation.Configuration
 
 @Configuration
 class UserDomainConfig {
+    @Bean
+    fun createUserService(userRepository: UserRepository): CreateUserService = CreateUserService(userRepository)
 
     @Bean
-    fun createUserService(userRepository: UserRepository): CreateUserService =
-        CreateUserService(userRepository)
-
-    @Bean
-    fun createAuthUserService(authGateway: AuthGateway): CreateAuthUserService =
-        CreateAuthUserService(authGateway)
+    fun createAuthUserService(authGateway: AuthGateway): CreateAuthUserService = CreateAuthUserService(authGateway)
 
     @Bean
     fun createUserGraphService(userGraphRepository: UserGraphRepository): CreateUserGraphService =

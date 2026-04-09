@@ -19,19 +19,20 @@ import org.springframework.test.web.servlet.ResultActions
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
 import org.springframework.test.web.servlet.setup.MockMvcBuilders
 import org.springframework.web.context.WebApplicationContext
-import org.testcontainers.containers.Neo4jContainer
-import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
+import org.testcontainers.neo4j.Neo4jContainer
+import org.testcontainers.postgresql.PostgreSQLContainer
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
-@TestPropertySource(properties = [
-    "spring.flyway.enabled=false",
-    "spring.jpa.hibernate.ddl-auto=create-drop"
-])
+@TestPropertySource(
+    properties = [
+        "spring.flyway.enabled=false",
+        "spring.jpa.hibernate.ddl-auto=create-drop",
+    ],
+)
 @Testcontainers
 abstract class AbstractIntegrationTest {
-
     @MockitoBean
     protected lateinit var firebaseApp: FirebaseApp
 
@@ -55,22 +56,26 @@ abstract class AbstractIntegrationTest {
         whenever(authGateway.createUser(any())).thenReturn("mocked-firebase-uid")
     }
 
-    protected fun post(url: String, body: String): ResultActions =
+    protected fun post(
+        url: String,
+        body: String,
+    ): ResultActions =
         mockMvc.perform(
-            MockMvcRequestBuilders.post(url)
+            MockMvcRequestBuilders
+                .post(url)
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(body)
+                .content(body),
         )
 
     companion object {
         @Container
         @ServiceConnection
         @JvmStatic
-        val postgres: PostgreSQLContainer<*> = PostgreSQLContainer("postgres:16-alpine")
+        val postgres: PostgreSQLContainer = PostgreSQLContainer("postgres:16-alpine")
 
         @Container
         @JvmStatic
-        val neo4j: Neo4jContainer<*> = Neo4jContainer("neo4j:5")
+        val neo4j: Neo4jContainer = Neo4jContainer("neo4j:5")
 
         @DynamicPropertySource
         @JvmStatic

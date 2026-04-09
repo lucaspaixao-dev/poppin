@@ -21,7 +21,7 @@ class User private constructor(
     private var _profilePhoto: String? = null,
     private var _location: Location? = null,
     private var _bio: String? = null,
-    private var _active: Boolean = true
+    private var _active: Boolean = true,
 ) {
     val active: Boolean get() = _active
     val socialName: String? get() = _socialName
@@ -59,8 +59,11 @@ class User private constructor(
     }
 
     companion object Factory {
-        fun create(input: CreateUserInput): Result<User> {
-            return validate(input).map {
+        private const val MAX_BIO_LENGTH = 500
+        private const val MAX_SOCIAL_MEDIAS = 5
+
+        fun create(input: CreateUserInput): Result<User> =
+            validate(input).map {
                 User(
                     id = UUID.randomUUID().toString(),
                     name = input.name,
@@ -74,10 +77,9 @@ class User private constructor(
                     _profilePhoto = input.profilePhoto,
                     _location = input.location?.let { Location(it.city, it.country) },
                     _bio = input.bio,
-                    _active = true
+                    _active = true,
                 )
             }
-        }
 
         fun reconstitute(
             id: String,
@@ -92,9 +94,9 @@ class User private constructor(
             active: Boolean,
             location: Location?,
             socialMedias: List<SocialMedia> = emptyList(),
-            registeredAt: LocalDateTime
-        ): User {
-            return User(
+            registeredAt: LocalDateTime,
+        ): User =
+            User(
                 id = id,
                 name = name,
                 email = email,
@@ -107,9 +109,8 @@ class User private constructor(
                 _profilePhoto = profilePhoto,
                 _location = location,
                 _bio = bio,
-                _active = active
+                _active = active,
             )
-        }
 
         private fun validateName(name: String): Result<Unit> {
             if (name.isBlank()) {
@@ -171,8 +172,8 @@ class User private constructor(
         }
 
         private fun validateBio(bio: String): Result<Unit> {
-            if (bio.length > 500) {
-                return Result.failure(UserException.InvalidName("Bio cannot exceed 500 characters"))
+            if (bio.length > MAX_BIO_LENGTH) {
+                return Result.failure(UserException.InvalidName("Bio cannot exceed $MAX_BIO_LENGTH characters"))
             }
             return Result.success(Unit)
         }
@@ -207,7 +208,7 @@ class User private constructor(
                 val smUrlResult = validateSocialMediaUrl(sm.url)
                 if (smUrlResult.isFailure) return smUrlResult
             }
-            if (input.socialMedias.size > 5) {
+            if (input.socialMedias.size > MAX_SOCIAL_MEDIAS) {
                 return Result.failure(UserException.InvalidSocialMedia("Too many social medias"))
             }
             return Result.success(Unit)
@@ -219,7 +220,7 @@ enum class Gender { MALE, FEMALE, OTHER }
 
 data class Location(
     val city: String,
-    val country: String
+    val country: String,
 ) {
     init {
         if (city.isBlank()) {
@@ -256,6 +257,10 @@ data class SocialMedia(
     }
 
     enum class Platform {
-        FACEBOOK, TWITTER, INSTAGRAM, LINKEDIN, OTHER
+        FACEBOOK,
+        TWITTER,
+        INSTAGRAM,
+        LINKEDIN,
+        OTHER,
     }
 }

@@ -40,10 +40,10 @@ data class CreateUserOutput(
 
 data class LocationOutput(
     val city: String,
-    val country: String
+    val country: String,
 )
 
 data class SocialMediaOutput(
     val platform: SocialMedia.Platform,
-    val url: String
+    val url: String,
 )

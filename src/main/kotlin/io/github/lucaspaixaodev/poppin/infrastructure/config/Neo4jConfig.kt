@@ -12,18 +12,13 @@ import org.springframework.orm.jpa.JpaTransactionManager
 @Configuration
 @EnableNeo4jRepositories(
     basePackages = ["io.github.lucaspaixaodev.poppin.infrastructure.output.database.neo4j"],
-    transactionManagerRef = "neo4jTransactionManager"
+    transactionManagerRef = "neo4jTransactionManager",
 )
 class Neo4jConfig {
-
     @Bean
     @Primary
-    fun transactionManager(entityManagerFactory: EntityManagerFactory): JpaTransactionManager {
-        return JpaTransactionManager(entityManagerFactory)
-    }
+    fun transactionManager(entityManagerFactory: EntityManagerFactory): JpaTransactionManager = JpaTransactionManager(entityManagerFactory)
 
     @Bean
-    fun neo4jTransactionManager(driver: Driver): Neo4jTransactionManager {
-        return Neo4jTransactionManager(driver)
-    }
+    fun neo4jTransactionManager(driver: Driver): Neo4jTransactionManager = Neo4jTransactionManager(driver)
 }

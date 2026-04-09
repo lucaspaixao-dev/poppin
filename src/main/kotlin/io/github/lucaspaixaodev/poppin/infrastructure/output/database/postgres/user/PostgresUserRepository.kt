@@ -4,13 +4,13 @@ import io.github.lucaspaixaodev.poppin.domain.exception.RepositoryException
 import io.github.lucaspaixaodev.poppin.domain.user.User
 import io.github.lucaspaixaodev.poppin.domain.user.repository.UserRepository
 import org.slf4j.LoggerFactory
+import org.springframework.dao.DataAccessException
 import org.springframework.stereotype.Repository
 
 @Repository
 class PostgresUserRepository(
-    private val jpaRepository: UserJpaRepository
+    private val jpaRepository: UserJpaRepository,
 ) : UserRepository {
-
     private val log = LoggerFactory.getLogger(javaClass)
 
     override fun create(user: User) {
@@ -18,9 +18,9 @@ class PostgresUserRepository(
         try {
             jpaRepository.save(UserEntity.fromDomain(user))
             log.info("User persisted - id={}", user.id)
-        } catch (e: Exception) {
+        } catch (e: DataAccessException) {
             log.error("Failed to persist user - id={} error={}", user.id, e.message)
-            throw RepositoryException.CreationFailed("Failed to create a new user", e.message ?: "unknown error")
+            throw RepositoryException.CreationFailed("Failed to create a new user", e)
         }
     }
 

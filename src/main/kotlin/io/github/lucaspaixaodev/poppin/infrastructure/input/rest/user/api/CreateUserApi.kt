@@ -17,17 +17,19 @@ import org.springframework.web.bind.annotation.RequestMapping
 @Tag(name = "Users", description = "User management")
 @RequestMapping("/api/v1/users")
 interface CreateUserApi {
-
     @Operation(summary = "Create a new user")
     @ApiResponses(
         ApiResponse(
             responseCode = "201",
             description = "User created successfully",
-            content = [Content(schema = Schema(implementation = CreateUserResponse::class))]
+            content = [Content(schema = Schema(implementation = CreateUserResponse::class))],
         ),
         ApiResponse(responseCode = "400", description = "Validation error", content = [Content()]),
-        ApiResponse(responseCode = "409", description = "Email already registered", content = [Content()])
+        ApiResponse(responseCode = "409", description = "Email already registered", content = [Content()]),
+        ApiResponse(responseCode = "409", description = "Username already registered", content = [Content()]),
     )
     @PostMapping
-    fun create(@Valid @RequestBody request: CreateUserRequest): ResponseEntity<CreateUserResponse>
+    fun create(
+        @Valid @RequestBody request: CreateUserRequest,
+    ): ResponseEntity<CreateUserResponse>
 }

@@ -11,27 +11,28 @@ import org.springframework.stereotype.Component
 
 @Component
 class FirebaseAuthGateway(
-    private val firebaseAuth: FirebaseAuth
+    private val firebaseAuth: FirebaseAuth,
 ) : AuthGateway {
-
     private val log = LoggerFactory.getLogger(javaClass)
 
     override fun createUser(user: User): String {
         log.info("Creating Firebase user - uid={} email={}", user.id, user.email)
-        val request = UserRecord.CreateRequest()
-            .setUid(user.id)
-            .setEmail(user.email)
-            .setDisplayName(user.name)
-            .setPhotoUrl(user.profilePhoto)
-            .setDisabled(false)
+        val request =
+            UserRecord
+                .CreateRequest()
+                .setUid(user.id)
+                .setEmail(user.email)
+                .setDisplayName(user.name)
+                .setPhotoUrl(user.profilePhoto)
+                .setDisabled(false)
 
         return try {
             val uid = firebaseAuth.createUser(request).uid
             log.info("Firebase user created - uid={}", uid)
             uid
-        } catch (e: Exception) {
+        } catch (e: FirebaseAuthException) {
             log.error("Failed to create Firebase user - email={} error={}", user.email, e.message)
-            throw AuthGatewayException.UserCreationFailed(user.email, e.message ?: "unknown error")
+            throw AuthGatewayException.UserCreationFailed(user.email, e)
         }
     }
 
@@ -41,10 +42,11 @@ class FirebaseAuthGateway(
             firebaseAuth.getUserByEmail(email)
             true
         } catch (e: FirebaseAuthException) {
-            if (e.authErrorCode.name == USER_NOT_FOUND) false
-            else {
+            if (e.authErrorCode.name == USER_NOT_FOUND) {
+                false
+            } else {
                 log.error("Failed to check Firebase user existence - email={} error={}", email, e.message)
-                throw AuthGatewayException.UserUpdateFailed(email, e.message ?: "unknown error")
+                throw AuthGatewayException.UserUpdateFailed(email, e)
             }
         }
     }
@@ -55,9 +57,9 @@ class FirebaseAuthGateway(
         try {
             firebaseAuth.updateUser(request)
             log.info("Firebase user enabled - uid={}", uid)
-        } catch (e: Exception) {
+        } catch (e: FirebaseAuthException) {
             log.error("Failed to enable Firebase user - uid={} error={}", uid, e.message)
-            throw AuthGatewayException.UserUpdateFailed(uid, e.message ?: "unknown error")
+            throw AuthGatewayException.UserUpdateFailed(uid, e)
         }
     }
 
@@ -67,9 +69,9 @@ class FirebaseAuthGateway(
         try {
             firebaseAuth.updateUser(request)
             log.info("Firebase user disabled - uid={}", uid)
-        } catch (e: Exception) {
+        } catch (e: FirebaseAuthException) {
             log.error("Failed to disable Firebase user - uid={} error={}", uid, e.message)
-            throw AuthGatewayException.UserUpdateFailed(uid, e.message ?: "unknown error")
+            throw AuthGatewayException.UserUpdateFailed(uid, e)
         }
     }
 

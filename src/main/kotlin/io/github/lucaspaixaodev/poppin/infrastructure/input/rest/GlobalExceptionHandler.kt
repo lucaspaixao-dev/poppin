@@ -13,25 +13,24 @@ import org.springframework.web.bind.annotation.RestControllerAdvice
 
 @RestControllerAdvice
 class GlobalExceptionHandler {
-
     private val log = LoggerFactory.getLogger(javaClass)
 
     // ── User ────────────────────────────────────────────────────────────────
 
     @ExceptionHandler(UserException.NotFound::class)
-    fun handle(ex: UserException.NotFound): ProblemDetail {
+    fun handleUserNotFound(ex: UserException.NotFound): ProblemDetail {
         log.warn("User not found: {}", ex.message)
         return problem(HttpStatus.NOT_FOUND, ex.message)
     }
 
     @ExceptionHandler(UserException.AlreadyExists::class)
-    fun handle(ex: UserException.AlreadyExists): ProblemDetail {
+    fun handleUserAlreadyExists(ex: UserException.AlreadyExists): ProblemDetail {
         log.warn("User already exists: {}", ex.message)
         return problem(HttpStatus.CONFLICT, ex.message)
     }
 
     @ExceptionHandler(UserException.UsernameAlreadyExists::class)
-    fun handle(ex: UserException.UsernameAlreadyExists): ProblemDetail {
+    fun handleUsernameAlreadyExists(ex: UserException.UsernameAlreadyExists): ProblemDetail {
         log.warn("Username already taken: {}", ex.message)
         return problem(HttpStatus.CONFLICT, ex.message)
     }
@@ -54,14 +53,14 @@ class GlobalExceptionHandler {
     // ── Request binding / validation ────────────────────────────────────────
 
     @ExceptionHandler(MethodArgumentNotValidException::class)
-    fun handle(ex: MethodArgumentNotValidException): ProblemDetail {
+    fun handleMethodArgumentNotValid(ex: MethodArgumentNotValidException): ProblemDetail {
         val detail = ex.bindingResult.fieldErrors.joinToString("; ") { "${it.field}: ${it.defaultMessage}" }
         log.warn("Validation failed: {}", detail)
         return problem(HttpStatus.BAD_REQUEST, detail)
     }
 
     @ExceptionHandler(HttpMessageNotReadableException::class)
-    fun handle(ex: HttpMessageNotReadableException): ProblemDetail {
+    fun handleHttpMessageNotReadable(ex: HttpMessageNotReadableException): ProblemDetail {
         log.warn("Unreadable request body: {}", ex.message)
         return problem(HttpStatus.BAD_REQUEST, "Invalid request body")
     }
@@ -69,13 +68,13 @@ class GlobalExceptionHandler {
     // ── Infrastructure ──────────────────────────────────────────────────────
 
     @ExceptionHandler(RepositoryException::class)
-    fun handle(ex: RepositoryException): ProblemDetail {
+    fun handleRepositoryError(ex: RepositoryException): ProblemDetail {
         log.error("Repository error: {}", ex.message, ex)
         return problem(HttpStatus.INTERNAL_SERVER_ERROR, ex.message)
     }
 
     @ExceptionHandler(AuthGatewayException::class)
-    fun handle(ex: AuthGatewayException): ProblemDetail {
+    fun handleAuthGatewayError(ex: AuthGatewayException): ProblemDetail {
         log.error("Auth gateway error: {}", ex.message, ex)
         return problem(HttpStatus.INTERNAL_SERVER_ERROR, ex.message)
     }
@@ -83,13 +82,15 @@ class GlobalExceptionHandler {
     // ── Fallback ────────────────────────────────────────────────────────────
 
     @ExceptionHandler(Exception::class)
-    fun handle(ex: Exception): ProblemDetail {
+    fun handleUnexpected(ex: Exception): ProblemDetail {
         log.error("Unhandled exception: {}", ex.message, ex)
         return problem(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred")
     }
 
     // ── Helper ──────────────────────────────────────────────────────────────
 
-    private fun problem(status: HttpStatus, detail: String?): ProblemDetail =
-        ProblemDetail.forStatusAndDetail(status, detail ?: "No details available")
+    private fun problem(
+        status: HttpStatus,
+        detail: String?,
+    ): ProblemDetail = ProblemDetail.forStatusAndDetail(status, detail ?: "No details available")
 }

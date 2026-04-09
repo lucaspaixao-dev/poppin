@@ -1,8 +1,8 @@
 package io.github.lucaspaixaodev.poppin.integration.user
 
-import io.github.lucaspaixaodev.poppin.integration.AbstractIntegrationTest
 import io.github.lucaspaixaodev.poppin.infrastructure.output.database.neo4j.user.UserNeo4jRepository
 import io.github.lucaspaixaodev.poppin.infrastructure.output.database.postgres.user.UserJpaRepository
+import io.github.lucaspaixaodev.poppin.integration.AbstractIntegrationTest
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
@@ -13,7 +13,6 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import org.springframework.transaction.annotation.Transactional
 
 class CreateUserIT : AbstractIntegrationTest() {
-
     @Autowired
     private lateinit var userJpaRepository: UserJpaRepository
 
@@ -29,11 +28,11 @@ class CreateUserIT : AbstractIntegrationTest() {
 
     @Nested
     inner class Success {
-
         @Test
         @Transactional
         fun `creates user with minimal required fields`() {
-            val body = """
+            val body =
+                """
                 {
                   "name": "Lucas Paixão",
                   "email": "lucas@email.com",
@@ -41,24 +40,25 @@ class CreateUserIT : AbstractIntegrationTest() {
                   "gender": "MALE",
                   "birthdate": "1995-01-01"
                 }
-            """.trimIndent()
+                """.trimIndent()
 
-            val result = post("/api/v1/users", body)
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").isNotEmpty())
-                .andExpect(jsonPath("$.name").value("Lucas Paixão"))
-                .andExpect(jsonPath("$.email").value("lucas@email.com"))
-                .andExpect(jsonPath("$.username").value("lucaspaixao"))
-                .andExpect(jsonPath("$.gender").value("MALE"))
-                .andExpect(jsonPath("$.birthdate").value("1995-01-01"))
-                .andExpect(jsonPath("$.active").value(true))
-                .andExpect(jsonPath("$.registeredAt").isNotEmpty())
-                .andExpect(jsonPath("$.socialName").doesNotExist())
-                .andExpect(jsonPath("$.profilePhoto").doesNotExist())
-                .andExpect(jsonPath("$.location").doesNotExist())
-                .andExpect(jsonPath("$.bio").doesNotExist())
-                .andExpect(jsonPath("$.socialMedias").isEmpty())
-                .andReturn()
+            val result =
+                post("/api/v1/users", body)
+                    .andExpect(status().isCreated())
+                    .andExpect(jsonPath("$.id").isNotEmpty())
+                    .andExpect(jsonPath("$.name").value("Lucas Paixão"))
+                    .andExpect(jsonPath("$.email").value("lucas@email.com"))
+                    .andExpect(jsonPath("$.username").value("lucaspaixao"))
+                    .andExpect(jsonPath("$.gender").value("MALE"))
+                    .andExpect(jsonPath("$.birthdate").value("1995-01-01"))
+                    .andExpect(jsonPath("$.active").value(true))
+                    .andExpect(jsonPath("$.registeredAt").isNotEmpty())
+                    .andExpect(jsonPath("$.socialName").doesNotExist())
+                    .andExpect(jsonPath("$.profilePhoto").doesNotExist())
+                    .andExpect(jsonPath("$.location").doesNotExist())
+                    .andExpect(jsonPath("$.bio").doesNotExist())
+                    .andExpect(jsonPath("$.socialMedias").isEmpty())
+                    .andReturn()
 
             @Suppress("UNCHECKED_CAST")
             val id = (objectMapper.readValue(result.response.contentAsString, Map::class.java) as Map<String, Any>)["id"] as String
@@ -79,7 +79,8 @@ class CreateUserIT : AbstractIntegrationTest() {
         @Test
         @Transactional
         fun `creates user with all optional fields`() {
-            val body = """
+            val body =
+                """
                 {
                   "name": "Ana Souza",
                   "email": "ana@email.com",
@@ -95,17 +96,18 @@ class CreateUserIT : AbstractIntegrationTest() {
                     { "platform": "LINKEDIN",  "url": "https://linkedin.com/in/ana" }
                   ]
                 }
-            """.trimIndent()
+                """.trimIndent()
 
-            val result = post("/api/v1/users", body)
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.bio").value("Just a person"))
-                .andExpect(jsonPath("$.socialName").value("ana_dev"))
-                .andExpect(jsonPath("$.profilePhoto").value("https://cdn.example.com/ana.jpg"))
-                .andExpect(jsonPath("$.location.city").value("São Paulo"))
-                .andExpect(jsonPath("$.location.country").value("Brazil"))
-                .andExpect(jsonPath("$.socialMedias.length()").value(2))
-                .andReturn()
+            val result =
+                post("/api/v1/users", body)
+                    .andExpect(status().isCreated())
+                    .andExpect(jsonPath("$.bio").value("Just a person"))
+                    .andExpect(jsonPath("$.socialName").value("ana_dev"))
+                    .andExpect(jsonPath("$.profilePhoto").value("https://cdn.example.com/ana.jpg"))
+                    .andExpect(jsonPath("$.location.city").value("São Paulo"))
+                    .andExpect(jsonPath("$.location.country").value("Brazil"))
+                    .andExpect(jsonPath("$.socialMedias.length()").value(2))
+                    .andReturn()
 
             @Suppress("UNCHECKED_CAST")
             val id = (objectMapper.readValue(result.response.contentAsString, Map::class.java) as Map<String, Any>)["id"] as String
@@ -117,7 +119,7 @@ class CreateUserIT : AbstractIntegrationTest() {
             assertThat(entity.profilePhoto).isEqualTo("https://cdn.example.com/ana.jpg")
             assertThat(entity.location).isNotNull()
             assertThat(entity.location!!.city).isEqualTo("São Paulo")
-            assertThat(entity.location!!.country).isEqualTo("Brazil")
+            assertThat(entity.location.country).isEqualTo("Brazil")
             assertThat(entity.socialMedias).hasSize(2)
 
             // Neo4j
@@ -126,7 +128,8 @@ class CreateUserIT : AbstractIntegrationTest() {
 
         @Test
         fun `two different users can be created without interference`() {
-            val first = """
+            val first =
+                """
                 {
                   "name": "First User",
                   "email": "first@email.com",
@@ -134,8 +137,9 @@ class CreateUserIT : AbstractIntegrationTest() {
                   "gender": "MALE",
                   "birthdate": "1990-01-01"
                 }
-            """.trimIndent()
-            val second = """
+                """.trimIndent()
+            val second =
+                """
                 {
                   "name": "Second User",
                   "email": "second@email.com",
@@ -143,7 +147,7 @@ class CreateUserIT : AbstractIntegrationTest() {
                   "gender": "FEMALE",
                   "birthdate": "1992-05-20"
                 }
-            """.trimIndent()
+                """.trimIndent()
 
             post("/api/v1/users", first).andExpect(status().isCreated())
             post("/api/v1/users", second).andExpect(status().isCreated())
@@ -155,10 +159,10 @@ class CreateUserIT : AbstractIntegrationTest() {
 
     @Nested
     inner class ConflictErrors {
-
         @Test
         fun `returns 409 when email is already registered`() {
-            val body = """
+            val body =
+                """
                 {
                   "name": "Lucas Paixão",
                   "email": "lucas@email.com",
@@ -166,7 +170,7 @@ class CreateUserIT : AbstractIntegrationTest() {
                   "gender": "MALE",
                   "birthdate": "1995-01-01"
                 }
-            """.trimIndent()
+                """.trimIndent()
             post("/api/v1/users", body).andExpect(status().isCreated())
 
             val duplicate = body.replace("lucaspaixao", "outrouser")
@@ -177,7 +181,8 @@ class CreateUserIT : AbstractIntegrationTest() {
 
         @Test
         fun `returns 409 when username is already taken`() {
-            val body = """
+            val body =
+                """
                 {
                   "name": "Lucas Paixão",
                   "email": "lucas@email.com",
@@ -185,7 +190,7 @@ class CreateUserIT : AbstractIntegrationTest() {
                   "gender": "MALE",
                   "birthdate": "1995-01-01"
                 }
-            """.trimIndent()
+                """.trimIndent()
             post("/api/v1/users", body).andExpect(status().isCreated())
 
             val duplicate = body.replace("lucas@email.com", "other@email.com")
@@ -197,17 +202,17 @@ class CreateUserIT : AbstractIntegrationTest() {
 
     @Nested
     inner class ValidationErrors {
-
         @Test
         fun `returns 400 when name is missing`() {
-            val body = """
+            val body =
+                """
                 {
                   "email": "lucas@email.com",
                   "username": "lucaspaixao",
                   "gender": "MALE",
                   "birthdate": "1995-01-01"
                 }
-            """.trimIndent()
+                """.trimIndent()
 
             post("/api/v1/users", body).andExpect(status().isBadRequest())
 
@@ -216,7 +221,8 @@ class CreateUserIT : AbstractIntegrationTest() {
 
         @Test
         fun `returns 400 when email format is invalid`() {
-            val body = """
+            val body =
+                """
                 {
                   "name": "Lucas Paixão",
                   "email": "not-an-email",
@@ -224,7 +230,7 @@ class CreateUserIT : AbstractIntegrationTest() {
                   "gender": "MALE",
                   "birthdate": "1995-01-01"
                 }
-            """.trimIndent()
+                """.trimIndent()
 
             post("/api/v1/users", body).andExpect(status().isBadRequest())
 
@@ -233,7 +239,8 @@ class CreateUserIT : AbstractIntegrationTest() {
 
         @Test
         fun `returns 400 when username contains uppercase letters`() {
-            val body = """
+            val body =
+                """
                 {
                   "name": "Lucas Paixão",
                   "email": "lucas@email.com",
@@ -241,7 +248,7 @@ class CreateUserIT : AbstractIntegrationTest() {
                   "gender": "MALE",
                   "birthdate": "1995-01-01"
                 }
-            """.trimIndent()
+                """.trimIndent()
 
             post("/api/v1/users", body).andExpect(status().isBadRequest())
 
@@ -250,7 +257,8 @@ class CreateUserIT : AbstractIntegrationTest() {
 
         @Test
         fun `returns 400 when birthdate is in the future`() {
-            val body = """
+            val body =
+                """
                 {
                   "name": "Lucas Paixão",
                   "email": "lucas@email.com",
@@ -258,7 +266,7 @@ class CreateUserIT : AbstractIntegrationTest() {
                   "gender": "MALE",
                   "birthdate": "2099-01-01"
                 }
-            """.trimIndent()
+                """.trimIndent()
 
             post("/api/v1/users", body).andExpect(status().isBadRequest())
 
@@ -267,10 +275,12 @@ class CreateUserIT : AbstractIntegrationTest() {
 
         @Test
         fun `returns 400 when social medias exceed 5`() {
-            val medias = (1..6).joinToString(",") {
-                """{ "platform": "OTHER", "url": "https://example.com/$it" }"""
-            }
-            val body = """
+            val medias =
+                (1..6).joinToString(",") {
+                    """{ "platform": "OTHER", "url": "https://example.com/$it" }"""
+                }
+            val body =
+                """
                 {
                   "name": "Lucas Paixão",
                   "email": "lucas@email.com",
@@ -279,7 +289,7 @@ class CreateUserIT : AbstractIntegrationTest() {
                   "birthdate": "1995-01-01",
                   "socialMedias": [$medias]
                 }
-            """.trimIndent()
+                """.trimIndent()
 
             post("/api/v1/users", body).andExpect(status().isBadRequest())
 

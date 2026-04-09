@@ -14,15 +14,15 @@ data class CreateUserInput(
     val socialName: String? = null,
     val profilePhoto: String? = null,
     val location: LocationInput? = null,
-    val socialMedias: List<SocialMediaInput> = emptyList()
+    val socialMedias: List<SocialMediaInput> = emptyList(),
 )
 
 data class LocationInput(
     val city: String,
-    val country: String
+    val country: String,
 )
 
 data class SocialMediaInput(
     val platform: SocialMedia.Platform,
-    val url: String
+    val url: String,
 )

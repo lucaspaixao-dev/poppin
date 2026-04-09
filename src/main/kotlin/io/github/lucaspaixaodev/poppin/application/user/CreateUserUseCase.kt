@@ -11,9 +11,8 @@ import org.springframework.stereotype.Component
 class CreateUserUseCase(
     private val createUserService: CreateUserService,
     private val createAuthUserService: CreateAuthUserService,
-    private val createUserGraphService: CreateUserGraphService
+    private val createUserGraphService: CreateUserGraphService,
 ) {
-
     fun execute(input: CreateUserInput): CreateUserOutput {
         val user = createUserService.execute(input)
 

@@ -4,10 +4,9 @@ import io.github.lucaspaixaodev.poppin.domain.exception.UserException
 import io.github.lucaspaixaodev.poppin.domain.user.Gender
 import io.github.lucaspaixaodev.poppin.domain.user.input.CreateUserInput
 import io.github.lucaspaixaodev.poppin.domain.user.repository.UserRepository
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNotNull
+import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatExceptionOfType
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.Mock
 import org.mockito.Mockito.never
@@ -19,19 +18,19 @@ import java.time.LocalDate
 
 @ExtendWith(MockitoExtension::class)
 class CreateUserServiceTest {
-
     @Mock
     private lateinit var userRepository: UserRepository
 
     private val service by lazy { CreateUserService(userRepository) }
 
-    private fun validInput() = CreateUserInput(
-        name = "Lucas Paixão",
-        email = "lucas@email.com",
-        username = "lucaspaixao",
-        gender = Gender.MALE,
-        birthdate = LocalDate.of(1995, 1, 1),
-    )
+    private fun validInput() =
+        CreateUserInput(
+            name = "Lucas Paixão",
+            email = "lucas@email.com",
+            username = "lucaspaixao",
+            gender = Gender.MALE,
+            birthdate = LocalDate.of(1995, 1, 1),
+        )
 
     @Test
     fun `creates user when email and username are not taken`() {
@@ -40,8 +39,8 @@ class CreateUserServiceTest {
 
         val user = service.execute(validInput())
 
-        assertNotNull(user.id)
-        assertEquals("lucas@email.com", user.email)
+        assertThat(user.id).isNotNull()
+        assertThat(user.email).isEqualTo("lucas@email.com")
         verify(userRepository).create(user)
     }
 
@@ -49,7 +48,7 @@ class CreateUserServiceTest {
     fun `throws AlreadyExists when email is already registered`() {
         `when`(userRepository.existsByEmail("lucas@email.com")).thenReturn(true)
 
-        assertThrows<UserException.AlreadyExists> {
+        assertThatExceptionOfType(UserException.AlreadyExists::class.java).isThrownBy {
             service.execute(validInput())
         }
 
@@ -61,7 +60,7 @@ class CreateUserServiceTest {
         `when`(userRepository.existsByEmail("lucas@email.com")).thenReturn(false)
         `when`(userRepository.existsByUsername("lucaspaixao")).thenReturn(true)
 
-        assertThrows<UserException.UsernameAlreadyExists> {
+        assertThatExceptionOfType(UserException.UsernameAlreadyExists::class.java).isThrownBy {
             service.execute(validInput())
         }
 

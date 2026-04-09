@@ -19,33 +19,34 @@ data class CreateUserResponse(
     val username: String,
     val bio: String?,
     val birthdate: LocalDate,
-    val gender: Gender
+    val gender: Gender,
 ) {
     companion object {
-        fun fromOutput(output: CreateUserOutput) = CreateUserResponse(
-            id = output.id,
-            name = output.name,
-            email = output.email,
-            socialName = output.socialName,
-            profilePhoto = output.profilePhoto,
-            location = output.location?.let { LocationResponse(it.city, it.country) },
-            socialMedias = output.socialMedias.map { SocialMediaResponse(it.platform, it.url) },
-            active = output.active,
-            registeredAt = output.registeredAt,
-            bio = output.bio,
-            username = output.username,
-            birthdate = output.birthdate,
-            gender = output.gender
-        )
+        fun fromOutput(output: CreateUserOutput) =
+            CreateUserResponse(
+                id = output.id,
+                name = output.name,
+                email = output.email,
+                socialName = output.socialName,
+                profilePhoto = output.profilePhoto,
+                location = output.location?.let { LocationResponse(it.city, it.country) },
+                socialMedias = output.socialMedias.map { SocialMediaResponse(it.platform, it.url) },
+                active = output.active,
+                registeredAt = output.registeredAt,
+                bio = output.bio,
+                username = output.username,
+                birthdate = output.birthdate,
+                gender = output.gender,
+            )
     }
 }
 
 data class LocationResponse(
     val city: String,
-    val country: String
+    val country: String,
 )
 
 data class SocialMediaResponse(
     val platform: SocialMedia.Platform,
-    val url: String
+    val url: String,
 )
