@@ -9,6 +9,7 @@ import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection
+import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
@@ -56,6 +57,10 @@ abstract class AbstractIntegrationTest {
         whenever(authGateway.createUser(any())).thenReturn("mocked-firebase-uid")
     }
 
+    protected fun mockFirebaseToken(uid: String) {
+        whenever(authGateway.verifyToken(any())).thenReturn(uid)
+    }
+
     protected fun post(
         url: String,
         body: String,
@@ -66,6 +71,18 @@ abstract class AbstractIntegrationTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(body),
         )
+
+    protected fun get(
+        url: String,
+        token: String,
+    ): ResultActions =
+        mockMvc.perform(
+            MockMvcRequestBuilders
+                .get(url)
+                .header(HttpHeaders.AUTHORIZATION, "Bearer $token"),
+        )
+
+    protected fun get(url: String): ResultActions = mockMvc.perform(MockMvcRequestBuilders.get(url))
 
     companion object {
         @Container

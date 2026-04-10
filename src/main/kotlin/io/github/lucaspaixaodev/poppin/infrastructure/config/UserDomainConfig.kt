@@ -6,6 +6,7 @@ import io.github.lucaspaixaodev.poppin.domain.user.repository.UserRepository
 import io.github.lucaspaixaodev.poppin.domain.user.service.CreateAuthUserService
 import io.github.lucaspaixaodev.poppin.domain.user.service.CreateUserGraphService
 import io.github.lucaspaixaodev.poppin.domain.user.service.CreateUserService
+import io.github.lucaspaixaodev.poppin.domain.user.service.GetCurrentUserService
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 
@@ -20,4 +21,7 @@ class UserDomainConfig {
     @Bean
     fun createUserGraphService(userGraphRepository: UserGraphRepository): CreateUserGraphService =
         CreateUserGraphService(userGraphRepository)
+
+    @Bean
+    fun getCurrentUserService(userRepository: UserRepository): GetCurrentUserService = GetCurrentUserService(userRepository)
 }

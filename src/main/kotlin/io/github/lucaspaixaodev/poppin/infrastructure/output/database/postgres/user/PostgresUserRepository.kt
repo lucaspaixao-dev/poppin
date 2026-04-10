@@ -6,12 +6,19 @@ import io.github.lucaspaixaodev.poppin.domain.user.repository.UserRepository
 import org.slf4j.LoggerFactory
 import org.springframework.dao.DataAccessException
 import org.springframework.stereotype.Repository
+import org.springframework.transaction.annotation.Transactional
 
 @Repository
 class PostgresUserRepository(
     private val jpaRepository: UserJpaRepository,
 ) : UserRepository {
     private val log = LoggerFactory.getLogger(javaClass)
+
+    @Transactional(readOnly = true)
+    override fun findById(id: String): User? {
+        log.info("findById - id={}", id)
+        return jpaRepository.findById(id).orElse(null)?.toDomain()
+    }
 
     override fun create(user: User) {
         log.info("Persisting user - id={} email={}", user.id, user.email)
