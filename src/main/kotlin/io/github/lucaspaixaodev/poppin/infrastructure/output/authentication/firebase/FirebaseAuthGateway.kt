@@ -75,6 +75,16 @@ class FirebaseAuthGateway(
         }
     }
 
+    override fun verifyToken(token: String): String {
+        log.debug("Verifying Firebase token")
+        return try {
+            firebaseAuth.verifyIdToken(token).uid
+        } catch (e: FirebaseAuthException) {
+            log.warn("Firebase token verification failed: {}", e.message)
+            throw AuthGatewayException.TokenVerificationFailed(e)
+        }
+    }
+
     companion object {
         const val USER_NOT_FOUND = "USER_NOT_FOUND"
     }

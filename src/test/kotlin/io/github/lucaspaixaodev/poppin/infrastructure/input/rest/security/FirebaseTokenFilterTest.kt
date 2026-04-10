@@ -1,8 +1,7 @@
 package io.github.lucaspaixaodev.poppin.infrastructure.input.rest.security
 
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.FirebaseAuthException
-import com.google.firebase.auth.FirebaseToken
+import io.github.lucaspaixaodev.poppin.domain.exception.AuthGatewayException
+import io.github.lucaspaixaodev.poppin.domain.user.gateway.AuthGateway
 import jakarta.servlet.DispatcherType
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
@@ -24,7 +23,7 @@ import org.springframework.security.core.context.SecurityContextHolder
 
 @ExtendWith(MockitoExtension::class)
 class FirebaseTokenFilterTest {
-    @Mock private lateinit var firebaseAuth: FirebaseAuth
+    @Mock private lateinit var authGateway: AuthGateway
 
     @Mock private lateinit var request: HttpServletRequest
 
@@ -53,17 +52,15 @@ class FirebaseTokenFilterTest {
         filter.doFilter(request, response, chain)
 
         verify(chain).doFilter(request, response)
-        verifyNoInteractions(firebaseAuth)
+        verifyNoInteractions(authGateway)
         assertThat(SecurityContextHolder.getContext().authentication).isNull()
     }
 
     @Test
     fun `sets security context and continues chain for valid token`() {
         val uid = "firebase-uid-123"
-        val firebaseToken = mock<FirebaseToken>()
-        whenever(firebaseToken.uid).thenReturn(uid)
         whenever(request.getHeader("Authorization")).thenReturn("Bearer valid-token")
-        whenever(firebaseAuth.verifyIdToken("valid-token")).thenReturn(firebaseToken)
+        whenever(authGateway.verifyToken("valid-token")).thenReturn(uid)
 
         filter.doFilter(request, response, chain)
 
@@ -75,9 +72,9 @@ class FirebaseTokenFilterTest {
 
     @Test
     fun `returns 401 and stops chain for invalid token`() {
-        val exception = mock<FirebaseAuthException>()
+        val exception = mock<AuthGatewayException.TokenVerificationFailed>()
         whenever(request.getHeader("Authorization")).thenReturn("Bearer invalid-token")
-        whenever(firebaseAuth.verifyIdToken("invalid-token")).thenThrow(exception)
+        whenever(authGateway.verifyToken("invalid-token")).thenThrow(exception)
 
         filter.doFilter(request, response, chain)
 

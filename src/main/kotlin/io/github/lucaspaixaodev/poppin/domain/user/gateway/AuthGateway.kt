@@ -10,4 +10,6 @@ interface AuthGateway {
     fun enableUser(uid: String)
 
     fun disableUser(uid: String)
+
+    fun verifyToken(token: String): String
 }

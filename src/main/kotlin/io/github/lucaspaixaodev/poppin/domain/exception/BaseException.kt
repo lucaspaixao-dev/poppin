@@ -28,6 +28,10 @@ sealed class AuthGatewayException(
         uid: String,
         cause: Throwable,
     ) : AuthGatewayException("Failed to update auth user $uid: ${cause.message ?: "unknown error"}", cause)
+
+    class TokenVerificationFailed(
+        cause: Throwable,
+    ) : AuthGatewayException("Token verification failed: ${cause.message ?: "unknown error"}", cause)
 }
 
 sealed class UserException(
